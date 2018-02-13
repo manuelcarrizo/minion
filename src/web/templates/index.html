@@ -1,0 +1,208 @@
+<!doctype html>
+<html ng-app="minion">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+
+        <title>Avenida Minion</title>
+
+        <link rel="shortcut icon" type="image/x-icon" href="images/favicon.ico" />
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+        <link rel="stylesheet" href="css/minion.css">
+
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.7/angular.js"></script>
+        <script src="js/project.js"></script>
+    </head>
+
+    <body>
+        <input id="logged_username" name="logged_username" type="hidden" th:value="${username}">
+        <input id="logged_email" name="logged_email" type="hidden" th:value="${email}">
+        <input id="logged_image" name="logged_image" type="hidden" th:value="${image}">
+
+        <div class="container" ng-controller="TabsController as tabs">
+            <ul class="nav nav-tabs nav-justified">
+                <li ng-repeat="t in tabs.availableTabs" role="presentation" id="{{t}}_tab" ng-class="{active: tabs.isActive(t), disabled: tabs.isWorking()}" ng-click="tabs.isWorking() || tabs.activateTab(t)"><a class="disabled" href="#!/{{t}}">{{t | uppercase}}</a></li>
+            </ul>
+            <div id="status" class="panel panel-default" ng-hide="!tabs.isActive('status')">
+                <div class="panel-heading" ng-controller="GoogleAuthController as auth">
+                    <div class="row no-bottom-margin" >
+                        <div class="col-md-6">
+                            <ul class="list-inline" ng-hide="!auth.hasOwner()">
+                                <li><img class="img-thumbnail" ng-src="{{auth.owner.image}}"></li>
+                                <li class="v-center">
+                                    <div><b>Owned by</b></div>
+                                    <div>{{auth.owner.username}}</div>
+                                    <div>{{auth.owner.email}}</div>
+                                </li>
+                            </ul>
+                            <div ng-hide="auth.hasOwner()"><h3>Free minion</h3></div>
+                        </div>
+                        <div class="col-md-6 v-center">
+                            <div class="pull-right" ng-hide="auth.isLogged()">
+                                <div class="pull-right">
+                                    <form th:action="${login}" method="get">
+                                        <input id="callback" type="hidden" name="callback">
+                                        <input class="btn btn-primary" type="submit" value="Sign In">
+                                    </form>
+                                </div>
+                                <br>
+                                <div class="pull-right">
+                                    <p><strong>This minion is on read-only mode unless you are signed</strong></p>
+                                </div>
+                            </div>
+                            <div class="pull-right" ng-hide="!auth.isLogged()">
+                                <div><b>Signed as {{current_user.username}}</b></div>
+                                &nbsp;
+                                <div>
+                                    <button class="btn btn-primary" ng-click="auth.reclaim()" ng-hide="auth.isMine()">Take ownership</button>
+                                    <button class="btn btn-success" ng-click="auth.release()" ng-hide="!auth.isMine()">Release minion</button>
+                                    <button class="btn btn-danger" onclick="logout();">Sign Out</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel-body">
+                    <process-status ng-repeat="item in projects" item="item"></process-status>
+                    <process-status ng-repeat="item in services" item="item"></process-status>
+                </div>
+            </div>
+
+            <div id="releases" class="panel panel-default" ng-hide="!tabs.isActive('releases')">
+                <div class="panel-body">
+                    <div class="page-header"><h3>Deploy an already built release</h3></div>
+                    <running-jobs tab="releases" type="releases"></running-jobs>
+                    <nexus-versions ng-repeat="item in projects" item="item" repository="releases"></nexus-versions>
+                </div>
+            </div>
+
+            <div id="snapshots" class="panel panel-default" ng-hide="!tabs.isActive('snapshots')">
+                <div class="panel-body">
+                    <div class="page-header"><h3>Deploy an already built branch</h3></div>
+                    <running-jobs tab="snapshots" type="snapshots"></running-jobs>
+                    <nexus-versions ng-repeat="item in projects" item="item" repository="snapshots"></nexus-versions>
+                </div>
+            </div>
+
+            <div id="build" class="panel panel-default" ng-hide="!tabs.isActive('build')">
+                <div class="panel-body" ng-controller="BuildController as build">
+                    <div class="page-header"><h3>Build a new version on <a target="_blank" th:href="${jenkins}">Jenkins</a> and deploy it to this server</h3></div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <select class="form-control" name="selectedProject" ng-model="build.selectedProject" ng-change="build.getBranches(build.selectedProject)">
+                                <option value="">---Project---</option>
+                                <option ng-repeat='item in projects' value="{{item.id}}">{{item.name}}</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-8">
+                            <select class="form-control" name="selectedBranch" ng-model="build.selectedBranch" ng-disabled="!(build.selectedProject.length > 0 && build.branches.length > 0)">
+                                <option value="">---Branch---</option>
+                                <option ng-repeat="branch in build.branches" value="{{branch}}" >{{branch}}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row" align="center">
+                        <button class="btn btn-primary btn-lg" ng-click="build.build()" ng-disabled="!build.canBuild()">Build on Jenkins</button>
+                    </div>
+
+                    <div class="row col-md-12" ng-show="build.runningBuilds.length">
+                        <div class="alert alert-success" role="alert">
+                        <ul>
+                            <li ng-repeat='item in build.runningBuilds'>Building artifact <strong>{{item.artifact}}</strong>, branch <strong>{{item.branch}}</strong>. Status: <a target="_blank" href="{{ item.url }}">{{ item.status }}</a></li>
+                        <ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="properties" class="panel panel-default" ng-hide="!tabs.isActive('properties')">
+                <div class="panel-body" ng-controller="PropertiesController as properties">
+                    <select class="form-control col-md-12" name="selectedProperty" ng-model="properties.selectedProject" ng-change="properties.load(properties.selectedProject)">
+                        <option value="">---Properties---</option>
+                        <option ng-repeat='item in projects' value="{{item.id}}">{{item.name}}</option>
+                    </select>
+
+                    <div class="row">&nbsp;</div>
+
+                    <pre id="editor" ng-disabled="!properties.canSave()"></pre>
+
+                    <div class="col-md-12">
+                        <div class="alert alert-success" role="alert">
+                            <p>Don't forget to restart the service to apply the configuration</p>
+                        </div>
+                    </div>
+
+                    <div class="row" align="center">
+                        <button class="btn btn-primary btn-lg properties-control" title="Save" ng-click="properties.save(properties.selectedProject)" ng-disabled="!properties.canSave()">
+                            <span class="glyphicon glyphicon-floppy-disk" aria-hidden="true"></span>
+                        </button>
+
+                        <button class="btn btn-info btn-lg properties-control" title="Set as default" ng-click="properties.default(properties.selectedProject)" ng-disabled="!properties.canSave()">
+                            <span class="glyphicon glyphicon glyphicon-star" aria-hidden="true"></span>
+                        </button>
+
+                        <button class="btn btn-warning btn-lg properties-control" title="Restore from saved default" ng-click="properties.restore(properties.selectedProject)" ng-disabled="!properties.canSave()">
+                            <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="log" class="panel panel-default" ng-hide="!tabs.isActive('log')">
+                <div class="panel-body" ng-controller="LogController as log">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <select class="form-control" name="selectedProject" ng-model="log.selectedArtifact" ng-change="log.reload(log.selectedArtifact)" ng-disabled="log.working">
+                                <option value="">---Logs---</option>
+                                <option value="minion">Minion</option>
+                                <option ng-repeat='item in projects' value="{{item.artifact}}">{{item.name}}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-primary" ng-click="log.reload()" ng-disabled="!log.canReload() || log.autoreload">
+                                <span class="glyphicon glyphicon-refresh" aria-hidden="true">&nbsp; Reload</span>
+                            </button>
+                        </div>
+
+                        <div class="col-md-2">
+                            <div class="checkbox">
+                                <label><input type="checkbox" ng-model="log.autoreload" ng-click="log.updateAutoreload()" ng-disabled="!log.canReload()">Autoreload</label>
+                            </div>
+                        </div>
+                    </div>
+                    <pre id="log_viewer"></pre>
+                </div>
+            </div>
+
+            <img class="pull-right" ng-src="{{tabs.minion_image}}" height="320"/>
+        </div>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.2/ace.js" type="text/javascript" charset="utf-8"></script>
+
+<!--
+        <script th:inline="javascript">
+            var callback_url = window.location.hostname + window.location.pathname;
+
+            $(document).ready(function() {
+                document.getElementById("callback").value = callback_url;
+                document.getElementById("host").textContent = window.location.hostname;
+            });
+
+            function logout() {
+                $("<form action=[[${login}]] method='get'> \
+                    <input id='callback' type='hidden' name='callback' value='" + callback_url + "' > \
+                    <input type='hidden' name='logout' value='true'> \
+                    </form>")
+                .appendTo("body").submit();
+            }
+        </script>
+-->
+    </body>
+</html>

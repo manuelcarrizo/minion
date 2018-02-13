@@ -18,13 +18,14 @@ from django.urls import path
 from django.conf.urls import url, include
 
 from rest_framework import routers
-from src.api import views
+from src.api import views as api
+from src.web import views as web
 
 router = routers.DefaultRouter()
-router.register(r'projects', views.ProjectViewSet)
-
+router.register(r'projects', api.ProjectViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    url(r'^', include(router.urls)),
+    url(r'^api/', include(router.urls)),
+    path('', web.index)
 ]
