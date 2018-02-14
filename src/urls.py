@@ -27,5 +27,6 @@ router.register(r'projects', api.ProjectViewSet)
 urlpatterns = [
     path('admin/', admin.site.urls),
     url(r'^api/', include(router.urls)),
-    path('', web.index)
+    path('', web.index),
+
 ]
