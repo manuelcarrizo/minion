@@ -1,1 +1,6 @@
 *.pyc
+venv/
+.idea/
+*.sqlite3
+.vscode/
+
