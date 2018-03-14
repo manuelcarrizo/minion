@@ -23,6 +23,8 @@ from src.web import views as web
 
 router = routers.DefaultRouter()
 router.register(r'projects', api.ProjectViewSet)
+router.register(r'ports', api.PortViewSet)
+router.register(r'volumes', api.VolumeViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),

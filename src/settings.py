@@ -123,6 +123,6 @@ APPEND_SLASH = False
 
 STATIC_URL = '/static/'
 
-STATIC_ROOT = os.path.join(BASE_DIR, "src/web/static")
+STATIC_ROOT = os.path.join(BASE_DIR, 'src', 'web', 'static')
 
-PROJECTS_ROOT = '/tmp/minion'
+PROJECTS_ROOT = os.path.join(os.sep, os.environ.get('HOME', 'opt'), 'minion')

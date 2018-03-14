@@ -21,7 +21,11 @@ def checkout(name, branch):
 
 def branches(name):
     repo = Repo(project_path(name))
-    return [regex.sub('', branch) for branch in repo.git.branch('-r').split('\n')]
+    return [re.sub('.+origin/', '', branch) for branch in repo.git.branch(['-r', '--sort', '-version:refname']).split('\n')]
+
+def tags(name):
+    repo = Repo(project_path(name))
+    return [re.sub('.+origin/', '', branch) for branch in repo.git.tag(['--sort', '-version:refname']).split('\n')]
 
 def pull(name):
     repo = Repo(project_path(name))
