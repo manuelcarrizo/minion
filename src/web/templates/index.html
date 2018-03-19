@@ -9,68 +9,36 @@
         <title>Minion</title>
 
         <link rel="shortcut icon" type="image/x-icon" href="static/images/favicon.ico" />
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
         <link rel="stylesheet" href="static/css/minion.css">
 
         <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.7/angular.min.js"></script>
-        <script src="js/project.js"></script>
+        <script src="static/js/app.js"></script>
     </head>
 
     <body>
-        <input id="logged_username" name="logged_username" type="hidden" th:value="${username}">
-        <input id="logged_email" name="logged_email" type="hidden" th:value="${email}">
-        <input id="logged_image" name="logged_image" type="hidden" th:value="${image}">
-
         <div class="container" ng-controller="TabsController as tabs">
             <ul class="nav nav-tabs nav-justified">
-                <li ng-repeat="t in tabs.availableTabs" role="presentation" id="{{t}}_tab" ng-class="{active: tabs.isActive(t), disabled: tabs.isWorking()}" ng-click="tabs.isWorking() || tabs.activateTab(t)"><a class="disabled" href="#!/{{t}}">{{t | uppercase}}</a></li>
+                <li class="nav-item" ng-repeat="t in tabs.availableTabs" id="{{t}}_tab" ng-click="activateTab(t)">
+                    <a class="nav-link" ng-class="{active: isActive(t)}" href="#!/{{t}}">{{t | uppercase}}</a>
+                </li>
             </ul>
-            <div id="status" class="panel panel-default" ng-hide="!tabs.isActive('status')">
-                <div class="panel-heading" ng-controller="GoogleAuthController as auth">
-                    <div class="row no-bottom-margin" >
-                        <div class="col-md-6">
-                            <ul class="list-inline" ng-hide="!auth.hasOwner()">
-                                <li><img class="img-thumbnail" ng-src="{{auth.owner.image}}"></li>
-                                <li class="v-center">
-                                    <div><b>Owned by</b></div>
-                                    <div>{{auth.owner.username}}</div>
-                                    <div>{{auth.owner.email}}</div>
-                                </li>
-                            </ul>
-                            <div ng-hide="auth.hasOwner()"><h3>Free minion</h3></div>
-                        </div>
-                        <div class="col-md-6 v-center">
-                            <div class="pull-right" ng-hide="auth.isLogged()">
-                                <div class="pull-right">
-                                    <form th:action="${login}" method="get">
-                                        <input id="callback" type="hidden" name="callback">
-                                        <input class="btn btn-primary" type="submit" value="Sign In">
-                                    </form>
-                                </div>
-                                <br>
-                                <div class="pull-right">
-                                    <p><strong>This minion is on read-only mode unless you are signed</strong></p>
-                                </div>
-                            </div>
-                            <div class="pull-right" ng-hide="!auth.isLogged()">
-                                <div><b>Signed as {{current_user.username}}</b></div>
-                                &nbsp;
-                                <div>
-                                    <button class="btn btn-primary" ng-click="auth.reclaim()" ng-hide="auth.isMine()">Take ownership</button>
-                                    <button class="btn btn-success" ng-click="auth.release()" ng-hide="!auth.isMine()">Release minion</button>
-                                    <button class="btn btn-danger" onclick="logout();">Sign Out</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="panel-body">
-                    <process-status ng-repeat="item in projects" item="item"></process-status>
-                    <process-status ng-repeat="item in services" item="item"></process-status>
+            <div class="row">
+                <div id="status" class="panel panel-default" ng-hide="!isActive('status')">
+                    <div class="panel-body">
+                        <project-status ng-repeat="item in projects" item="item"></process-status>
+                    </div>
                 </div>
             </div>
 
+            <div id="deploy" class="panel panel-default" ng-hide="!isActive('deploy')">
+                <div class="panel-body">
+                    <project-deploy ng-repeat="item in projects" item="item"></process-deploy>
+                </div>
+            </div>
+
+<!--
             <div id="releases" class="panel panel-default" ng-hide="!tabs.isActive('releases')">
                 <div class="panel-body">
                     <div class="page-header"><h3>Deploy an already built release</h3></div>
@@ -177,32 +145,15 @@
                     </div>
                     <pre id="log_viewer"></pre>
                 </div>
-            </div>
+            </div> -->
 
             <img class="pull-right" ng-src="{{tabs.minion_image}}" height="320"/>
         </div>
 
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.2/ace.js" type="text/javascript" charset="utf-8"></script>
-
-<!--
-        <script th:inline="javascript">
-            var callback_url = window.location.hostname + window.location.pathname;
-
-            $(document).ready(function() {
-                document.getElementById("callback").value = callback_url;
-                document.getElementById("host").textContent = window.location.hostname;
-            });
-
-            function logout() {
-                $("<form action=[[${login}]] method='get'> \
-                    <input id='callback' type='hidden' name='callback' value='" + callback_url + "' > \
-                    <input type='hidden' name='logout' value='true'> \
-                    </form>")
-                .appendTo("body").submit();
-            }
-        </script>
--->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.1/ace.js" type="text/javascript" charset="utf-8"></script>
+        <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+        <script defer src="https://use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
     </body>
 </html>
