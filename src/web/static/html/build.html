@@ -1,0 +1,16 @@
+<div class="row" ng-focus="ctrler.focus($event)">
+    <div class="col-md-3" title="{{item.name}}">{{item.name}}</div>
+    <div class="col-md-6">
+        <div class="input-group">
+            <select class="custom-select" id="{{image.name}}-ref"
+                ng-model="selectedRef" ng-options="option for option in availableRefs">
+            </select>
+            <div class="input-group-append">
+                <button ng-disabled="selectedRef.length == 0" ng-click="build()" class="btn btn-outline-secondary" type="button">Build</button>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-1">
+        <button type="button" class="btn btn-secondary" ng-click='getRefs()'><span class="fas fa-sync-alt" aria-hidden="true"></span></button>
+    </div>
+</div

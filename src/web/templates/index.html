@@ -24,11 +24,9 @@
                 </li>
             </ul>
 
-            <div class="row">
-                <div id="status" class="panel panel-default" ng-hide="!isActive('status')">
-                    <div class="panel-body">
-                        <project-status ng-repeat="item in projects" item="item"></process-status>
-                    </div>
+            <div id="status" class="panel panel-default" ng-hide="!isActive('status')">
+                <div class="panel-body">
+                    <project-status ng-repeat="item in projects" item="item"></process-status>
                 </div>
             </div>
 
@@ -38,116 +36,17 @@
                 </div>
             </div>
 
-<!--
-            <div id="releases" class="panel panel-default" ng-hide="!tabs.isActive('releases')">
+            <div id="branches" class="panel panel-default" ng-hide="!isActive('branches')">
                 <div class="panel-body">
-                    <div class="page-header"><h3>Deploy an already built release</h3></div>
-                    <running-jobs tab="releases" type="releases"></running-jobs>
-                    <nexus-versions ng-repeat="item in projects" item="item" repository="releases"></nexus-versions>
+                    <project-build ng-repeat="item in projects" item="item" type="branches" param="branch"></process-build>
                 </div>
             </div>
 
-            <div id="snapshots" class="panel panel-default" ng-hide="!tabs.isActive('snapshots')">
+            <div id="releases" class="panel panel-default" ng-hide="!isActive('releases')">
                 <div class="panel-body">
-                    <div class="page-header"><h3>Deploy an already built branch</h3></div>
-                    <running-jobs tab="snapshots" type="snapshots"></running-jobs>
-                    <nexus-versions ng-repeat="item in projects" item="item" repository="snapshots"></nexus-versions>
+                    <project-build ng-repeat="item in projects" item="item" type="releases" param="tag"></process-build>
                 </div>
             </div>
-
-            <div id="build" class="panel panel-default" ng-hide="!tabs.isActive('build')">
-                <div class="panel-body" ng-controller="BuildController as build">
-                    <div class="page-header"><h3>Build a new version on <a target="_blank" th:href="${jenkins}">Jenkins</a> and deploy it to this server</h3></div>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <select class="form-control" name="selectedProject" ng-model="build.selectedProject" ng-change="build.getBranches(build.selectedProject)">
-                                <option value="">---Project---</option>
-                                <option ng-repeat='item in projects' value="{{item.id}}">{{item.name}}</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-8">
-                            <select class="form-control" name="selectedBranch" ng-model="build.selectedBranch" ng-disabled="!(build.selectedProject.length > 0 && build.branches.length > 0)">
-                                <option value="">---Branch---</option>
-                                <option ng-repeat="branch in build.branches" value="{{branch}}" >{{branch}}</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="row" align="center">
-                        <button class="btn btn-primary btn-lg" ng-click="build.build()" ng-disabled="!build.canBuild()">Build on Jenkins</button>
-                    </div>
-
-                    <div class="row col-md-12" ng-show="build.runningBuilds.length">
-                        <div class="alert alert-success" role="alert">
-                        <ul>
-                            <li ng-repeat='item in build.runningBuilds'>Building artifact <strong>{{item.artifact}}</strong>, branch <strong>{{item.branch}}</strong>. Status: <a target="_blank" href="{{ item.url }}">{{ item.status }}</a></li>
-                        <ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="properties" class="panel panel-default" ng-hide="!tabs.isActive('properties')">
-                <div class="panel-body" ng-controller="PropertiesController as properties">
-                    <select class="form-control col-md-12" name="selectedProperty" ng-model="properties.selectedProject" ng-change="properties.load(properties.selectedProject)">
-                        <option value="">---Properties---</option>
-                        <option ng-repeat='item in projects' value="{{item.id}}">{{item.name}}</option>
-                    </select>
-
-                    <div class="row">&nbsp;</div>
-
-                    <pre id="editor" ng-disabled="!properties.canSave()"></pre>
-
-                    <div class="col-md-12">
-                        <div class="alert alert-success" role="alert">
-                            <p>Don't forget to restart the service to apply the configuration</p>
-                        </div>
-                    </div>
-
-                    <div class="row" align="center">
-                        <button class="btn btn-primary btn-lg properties-control" title="Save" ng-click="properties.save(properties.selectedProject)" ng-disabled="!properties.canSave()">
-                            <span class="glyphicon glyphicon-floppy-disk" aria-hidden="true"></span>
-                        </button>
-
-                        <button class="btn btn-info btn-lg properties-control" title="Set as default" ng-click="properties.default(properties.selectedProject)" ng-disabled="!properties.canSave()">
-                            <span class="glyphicon glyphicon glyphicon-star" aria-hidden="true"></span>
-                        </button>
-
-                        <button class="btn btn-warning btn-lg properties-control" title="Restore from saved default" ng-click="properties.restore(properties.selectedProject)" ng-disabled="!properties.canSave()">
-                            <span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="log" class="panel panel-default" ng-hide="!tabs.isActive('log')">
-                <div class="panel-body" ng-controller="LogController as log">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <select class="form-control" name="selectedProject" ng-model="log.selectedArtifact" ng-change="log.reload(log.selectedArtifact)" ng-disabled="log.working">
-                                <option value="">---Logs---</option>
-                                <option value="minion">Minion</option>
-                                <option ng-repeat='item in projects' value="{{item.artifact}}">{{item.name}}</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <button class="btn btn-primary" ng-click="log.reload()" ng-disabled="!log.canReload() || log.autoreload">
-                                <span class="glyphicon glyphicon-refresh" aria-hidden="true">&nbsp; Reload</span>
-                            </button>
-                        </div>
-
-                        <div class="col-md-2">
-                            <div class="checkbox">
-                                <label><input type="checkbox" ng-model="log.autoreload" ng-click="log.updateAutoreload()" ng-disabled="!log.canReload()">Autoreload</label>
-                            </div>
-                        </div>
-                    </div>
-                    <pre id="log_viewer"></pre>
-                </div>
-            </div> -->
-
-            <img class="pull-right" ng-src="{{tabs.minion_image}}" height="320"/>
         </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.1/ace.js" type="text/javascript" charset="utf-8"></script>

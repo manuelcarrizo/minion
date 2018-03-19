@@ -31,6 +31,10 @@ def pull(name):
     repo = Repo(project_path(name))
     repo.git.pull()
 
+def fetch(name):
+    repo = Repo(project_path(name))
+    repo.git.fetch()
+
 def current(name):
     repo = Repo(project_path(name))
     return repo.active_branch.name

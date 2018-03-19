@@ -1,0 +1,14 @@
+.row {
+    margin-bottom: 15px;
+}
+
+.nav {
+    margin-top: 15px;
+    margin-bottom: 45px;
+}
+
+@media (min-width:1200px) {
+    .container {
+        width:85%
+    }
+}

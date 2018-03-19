@@ -8,9 +8,9 @@ client = docker.from_env()
 
 def get(name, tag='latest'):
     image = "minion/%s:%s" % (name, tag)
-    print('looking for', image)
+#    print('looking for', image)
     for container in client.containers.list(all=True):
-        print('comparing', container.attrs['Config']['Image'], image)
+#        print('comparing', container.attrs['Config']['Image'], image)
         if container.attrs['Config']['Image'] == image:
             return container
     return None

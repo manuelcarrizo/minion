@@ -48,16 +48,23 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def build(self, request, pk=None):
         project = Project.objects.get(pk=pk)
         name = project.lower()
-        branch = request.data.get('branch', git_adapter.current(name))
 
-        if branch != git_adapter.current(name):
-            print("Switching to branch", branch)
-            git_adapter.checkout(name, branch)
+        print("about to build", request.data)
 
-        git_adapter.pull(name)
-        common.background_task(docker_adapter.build, name, branch)
+        branch = request.data.get('branch', None)
+        tag = request.data.get('tag', None)
 
-        return Response("Building %s" % branch)
+        git_adapter.fetch(name)
+
+        ref = branch or tag
+        if ref:
+            git_adapter.checkout(name, ref)
+        else:
+            return Response('Unknown branch or tag', status=http_status.HTTP_400_BAD_REQUEST)
+
+        common.background_task(docker_adapter.build, name, ref)
+
+        return Response("Building %s" % ref)
 
     @detail_route(methods=['post'])
     def reset(self, request, pk=None):
