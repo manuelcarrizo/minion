@@ -1,23 +1,31 @@
 import os
 
+from django.conf import settings
 import docker
-from src.api.common import project_path
+from src.api.common import project_path, volumes_path
 
 client = docker.from_env()
 
-def get(name):
+def get(name, tag='latest'):
+    image = "minion/%s:%s" % (name, tag)
+    print('looking for', image)
     for container in client.containers.list(all=True):
-        if container.attrs['Config']['Image'] == name:
+        print('comparing', container.attrs['Config']['Image'], image)
+        if container.attrs['Config']['Image'] == image:
             return container
     return None
 
-def start(name, tag, port):
-    image = "minion/%s:%s" % (name, tag)
-    container = client.containers.run(image, detach=True, ports={port: None})
+def start(project):
+    image = "minion/%s:%s" % (project.lower(), project.image)
+    ports = { '%d/%s' % (p.container, p.protocol ): p.host for p in project.ports.all() }
+    volumes = {'%s%s' % (volumes_path(project.lower()), v.path):
+                    {'bind': v.path, 'mode': 'rw'} for v in project.volumes.all() }
+
+    container = client.containers.run(image, detach=True, stdout=True, stderr=True, ports=ports, volumes=volumes)
     return container.id
 
-def stop(name):
-    container = get(name)
+def stop(name, tag='latest'):
+    container = get(name, tag)
     if container:
         print("stopping %s" % container.id)
         container.stop()
@@ -44,7 +52,7 @@ def build(name, tag):
 
 def base_url(name, port):
     container = get(name)
-    docker_port = "%d/tcp" % port
+    docker_port = "%d/%s" % (port.number, port.protocol)
 
     try:
         entry = container.attrs['NetworkSettings']['Ports'][docker_port][0]

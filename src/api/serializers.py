@@ -1,3 +1,4 @@
+import os
 from rest_framework import serializers
 from src.api.models import Project, Port, Volume
 
@@ -7,12 +8,21 @@ from src.api import common
 class PortSerializer(serializers.ModelSerializer):
     class Meta:
         model = Port
-        fields = ('number',)
+        fields = ('project', 'host', 'container', 'protocol')
 
 class VolumeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Volume
-        fields = ('path',)
+        fields = ('id', 'project', 'path',)
+    
+    def create(self, validated_data):
+        volume = Volume.objects.create(**validated_data)
+
+        volume_path = common.volumes_path(volume.project.lower()) + volume.path
+        os.makedirs(volume_path, exist_ok=True)
+
+        return volume
+
 class ProjectSerializer(serializers.ModelSerializer):
     ports = PortSerializer(many=True)
     volumes = VolumeSerializer(many=True)

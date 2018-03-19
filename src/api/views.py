@@ -28,8 +28,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         if request.method == 'GET':
             container = docker_adapter.get(name)
-            print(container)
-            return Response(container.status)
+            if container:
+                return Response(container.status)
+            else:
+                return Response('OFF')
         elif request.method == 'POST':
             command = request.data.get('command', None)
             if command == 'start':
@@ -89,7 +91,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def endpoint(self, request, pk=None):
         project = Project.objects.get(pk=pk)
 
-        return Response(self.endpoint_url(project.lower(), project.port))
+        port = project.ports.first()
+        return Response(self.endpoint_url(project.lower(), port))
     
     @detail_route(methods=['get'])
     def tags(self, request, pk=None):
@@ -97,26 +100,25 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         return Response(docker_adapter.images(project.lower()))
 
-
-"""
-    @detail_route(methods=['get'])
-    def ping(self, request, pk=None):
+    @detail_route(methods=['post'])
+    def deploy(self, request, pk=None):
         project = Project.objects.get(pk=pk)
         name = project.lower()
 
-        endpoint = self.endpoint_url(project.lower(), project.port)
+        tag = request.data.get('tag', None)
 
-        try:
-            print("getting", endpoint, project.pingpath)
-            conn = http.client.HTTPConnection(endpoint)
-            conn.request("HEAD", project.pingpath)
-            response = conn.getresponse()
-            print(response.reason, response.read())
-            return Response(response.status)
-        except Exception as e:
-            print(e)
-            return Response("Could not ping application")
-"""
+        if tag:
+            print("deploying", name, 'from', project.image, 'to', tag)
+            docker_adapter.stop(name, project.image)
+            
+            project.image = tag
+            project.save()
+
+            docker_adapter.start(project)
+
+            return Response('Success')
+        else:
+            return Response('tag is required', status=http_status.HTTP_400_BAD_REQUEST)
 
 class PortViewSet(viewsets.ModelViewSet):
     """
