@@ -42,6 +42,7 @@
             restrict: "EA",
             scope: {item: "="},
             templateUrl: "static/html/status.html",
+            controllerAs: 'ctrler',
             controller: function($scope, $http, $interval) {
                 var ctrler = this;
                 var item_id = $scope.item.id;
@@ -50,9 +51,9 @@
                 this.statusURL = "";
 
                 this.getEndpoint = function() {
-                    $http.get("api/projects/" + item_id + "endpoint").then(
-                        function(data) {
-                            ctrler.statusURL = data;
+                    $http.get("api/projects/" + item_id + "/endpoint/").then(
+                        function(res) {
+                            ctrler.statusURL = res.data;
                         },
                         function(error) {
                             ctrler.statusURL = "";
@@ -62,7 +63,7 @@
 
                 this.checkStatus = function() {
                     if(ctrler.focused) {
-                        $http.get("api/projects/" + item_id + "/status").then(function(res) {
+                        $http.get("api/projects/" + item_id + "/status/").then(function(res) {
 //                            console.log($scope.item.name, 'is', data)
                             ctrler.status = res.data;
                             ctrler.running = (ctrler.status === "RUNNING");
@@ -77,6 +78,25 @@
                     else {
                         $interval(ctrler.checkStatus, 10000, 1);
                     }
+                };
+
+                this.changeStatus = function(cmd) {
+                    $http.post("api/projects/" + item_id + "/status/", {command: cmd, tag: $scope.item.image}).then(function(res) {
+                        console.log(res);
+                    });
+                };
+
+                this.start = function() {
+                    ctrler.changeStatus('start');
+                };
+
+                this.stop = function() {
+                    ctrler.changeStatus('stop');
+                    ctrler.statusURL = "";
+                };
+
+                this.restart = function() {
+                    ctrler.changeStatus('restart');
                 };
 
                 ctrler.checkStatus();
@@ -97,7 +117,7 @@
                 $scope.availableTags = [];
 
                 $scope.getTags = function() {
-                    $http.get("api/projects/" + item_id + "/tags").then(function(res) {
+                    $http.get("api/projects/" + item_id + "/tags/").then(function(res) {
                         $scope.availableTags = res.data;
                     });
                 };

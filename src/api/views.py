@@ -27,20 +27,26 @@ class ProjectViewSet(viewsets.ModelViewSet):
         name = project.lower()
 
         if request.method == 'GET':
-            container = docker_adapter.get(name)
+            # only get the running container
+            container = docker_adapter.get(name, project.image, False)
             if container:
-                return Response(container.status)
+                return Response(container.status.upper())
             else:
                 return Response('OFF')
         elif request.method == 'POST':
             command = request.data.get('command', None)
+            tag = request.data.get('tag', project.image)
+
             if command == 'start':
-                tag = request.data.get('tag', 'latest')
-                id = docker_adapter.start(name, tag, project.port)
+                id = docker_adapter.start(project)
                 return Response(id)
             elif command == 'stop':
-                res = docker_adapter.stop(name)
-                return Response(res)
+                docker_adapter.stop(name, tag)
+                return Response("Stopping %s" % name)
+            elif command == 'restart':
+                docker_adapter.stop(name, tag)
+                id = docker_adapter.start(project)
+                return Response(id)
             else:
                 return Response('command is required', status=http_status.HTTP_400_BAD_REQUEST)
 
@@ -91,15 +97,15 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         return Response(git_adapter.tags(project.lower()))
 
-    def endpoint_url(self, name, port):
-        return docker_adapter.base_url(name, port)
+    def endpoint_url(self, name, image, port):
+        return docker_adapter.base_url(name, image, port)
 
     @detail_route(methods=['get'])
     def endpoint(self, request, pk=None):
         project = Project.objects.get(pk=pk)
 
         port = project.ports.first()
-        return Response(self.endpoint_url(project.lower(), port))
+        return Response(self.endpoint_url(project.lower(), project.image, port))
     
     @detail_route(methods=['get'])
     def tags(self, request, pk=None):

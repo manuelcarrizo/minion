@@ -6,11 +6,9 @@ from src.api.common import project_path, volumes_path
 
 client = docker.from_env()
 
-def get(name, tag='latest'):
+def get(name, tag='latest', all=True):
     image = "minion/%s:%s" % (name, tag)
-#    print('looking for', image)
-    for container in client.containers.list(all=True):
-#        print('comparing', container.attrs['Config']['Image'], image)
+    for container in client.containers.list(all=all):
         if container.attrs['Config']['Image'] == image:
             return container
     return None
@@ -50,9 +48,9 @@ def build(name, tag):
     except Exception as e:
         print("error", e)
 
-def base_url(name, port):
-    container = get(name)
-    docker_port = "%d/%s" % (port.number, port.protocol)
+def base_url(name, image, port):
+    container = get(name, image, False)
+    docker_port = "%d/%s" % (port.container, port.protocol)
 
     try:
         entry = container.attrs['NetworkSettings']['Ports'][docker_port][0]
