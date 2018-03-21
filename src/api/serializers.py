@@ -16,6 +16,8 @@ class VolumeSerializer(serializers.ModelSerializer):
         fields = ('id', 'project', 'path',)
     
     def create(self, validated_data):
+        # sanitize
+        validated_data['path'] = os.path.normpath("/" + validated_data['path']).replace("//", "/")
         volume = Volume.objects.create(**validated_data)
 
         volume_path = common.volumes_path(volume.project.lower()) + volume.path
