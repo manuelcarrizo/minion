@@ -21,6 +21,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
     serializer_class = ProjectSerializer
 
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            shutil.rmtree(common.project_path(instance.lower()))
+            self.perform_destroy(instance)
+        except Exception as e:
+            pass
+        
+        return Response(status=http_status.HTTP_204_NO_CONTENT)
+
     @detail_route(methods=["get", "post"])
     def status(self, request, pk=None):
         project = Project.objects.get(pk=pk)

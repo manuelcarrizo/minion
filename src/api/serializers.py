@@ -26,16 +26,16 @@ class VolumeSerializer(serializers.ModelSerializer):
         return volume
 
 class ProjectSerializer(serializers.ModelSerializer):
-    ports = PortSerializer(many=True)
-    volumes = VolumeSerializer(many=True)
+    ports = PortSerializer(many=True, required=False)
+    volumes = VolumeSerializer(many=True, required=False)
     class Meta:
         model = Project
         depth = 1
         fields = ('id', 'name', 'url', 'image', 'ports', 'volumes')
 
     def create(self, validated_data):
-        ports_data = validated_data.pop('ports')
-        volumes_data = validated_data.pop('volumes')
+        ports_data = validated_data.pop('ports', [])
+        volumes_data = validated_data.pop('volumes', [])
 
         project = Project.objects.create(**validated_data)
 

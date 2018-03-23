@@ -17,6 +17,8 @@
 
         $scope.activateTab = function(tab) {
             tabs.activeTab = tab;
+            $scope.$emit("tabChanged", tabs.activeTab);
+            $scope.$broadcast("tabChanged", tabs.activeTab);
         };
 
         $scope.isActive = function(tab) {
@@ -24,8 +26,27 @@
         };
     }]);
 
+    app.controller("ProjectController", ["$scope", "$http", "projectsService", function($scope, $http, projectsService){
+        var ctrler = this;
+
+        this.new_project = {name: "", url: ""};
+
+        this.valid = function() {
+            return ctrler.new_project.name.length && ctrler.new_project.url.length;
+        }
+
+        this.create = function() {
+            $http.post("api/projects/", {name: ctrler.new_project.name, url: ctrler.new_project.url}).then(function(res) {
+                console.log("Successfully created", ctrler.new_project.name);
+                projectsService.get();
+            });
+            $('#newProject').modal('hide')
+        };
+    }]);
+
     app.service("projectsService", ["$rootScope", "$http", function($rootScope, $http) {
         this.get = function() {
+            $rootScope.projects = [];
             $http.get("api/projects/").then(function(response) {
                 $rootScope.projects = response.data;
             });
@@ -41,9 +62,20 @@
             controller: function($scope, $http, $interval) {
                 var ctrler = this;
                 var item_id = $scope.item.id;
-                this.focused = true;
+                this.focused = false;
                 this.running = false;
                 this.statusURL = "";
+
+                $scope.$on("tabChanged", function(event, args) {
+                    if(args === "status") {
+                        console.log("status got focus");
+                        ctrler.focused = true;
+                    }
+                    else {
+                        console.log("status lost focus");
+                        ctrler.focused = false;
+                    }
+                });
 
                 this.getEndpoint = function() {
                     $http.get("api/projects/" + item_id + "/endpoint/").then(
@@ -59,7 +91,6 @@
                 this.checkStatus = function() {
                     if(ctrler.focused) {
                         $http.get("api/projects/" + item_id + "/status/").then(function(res) {
-//                            console.log($scope.item.name, 'is', data)
                             ctrler.status = res.data;
                             ctrler.running = (ctrler.status === "RUNNING");
 
@@ -102,7 +133,7 @@
     app.directive("projectSetting", function() {
         return {
             restrict: "EA",
-            scope: {item: "<"},
+            scope: {item: "="},
             templateUrl: "static/html/settings.html",
             controllerAs: 'ctrler',
             controller: function($scope, $http, projectsService) {
@@ -121,6 +152,7 @@
 
                 this.ports_modal = "ports-" + $scope.project.name;
                 this.volumes_modal = "volumes-" + $scope.project.name;
+                this.confirm_modal = "confirm-" + $scope.project.name;
 
                 this.resetNewPort = function() {
                     ctrler.new_port = {host: null, container: null, protocol: null};
@@ -135,6 +167,15 @@
 
                     $scope.project = angular.copy($scope.item);
                 };
+
+                this.deleteProject = function() {
+                    $http.delete("api/projects/" + $scope.project.id + "/").then(function(res) {
+                        console.log("Successfully deleted", $scope.project.name);
+                        ctrler.closeModal(ctrler.confirm_modal);
+                    }, function(err) {
+                        ctrler.closeModal(ctrler.confirm_modal);
+                    });
+                };
                 
                 this.openModal = function(name) {
                     ctrler.resetScope();
@@ -147,7 +188,7 @@
                 };
 
                 this.validPort = function() {
-                    return ctrler.new_port.host > 0 && ctrler.new_port.container > 0 && ctrler.new_port.protocol;
+                    return ctrler.new_port && ctrler.new_port.host > 0 && ctrler.new_port.container > 0 && ctrler.new_port.protocol;
                 };
 
                 this.addPort = function() {

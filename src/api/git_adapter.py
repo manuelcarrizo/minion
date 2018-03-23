@@ -12,7 +12,9 @@ def exists(name):
     return True
 
 def clone(name, url):
+    print("Cloning", url, project_path(name))
     Repo.clone_from(url, project_path(name))
+    print("Cloned", name)
 
 def checkout(name, branch):
     repo = Repo(project_path(name))
