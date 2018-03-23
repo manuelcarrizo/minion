@@ -62,17 +62,15 @@
             controller: function($scope, $http, $interval) {
                 var ctrler = this;
                 var item_id = $scope.item.id;
-                this.focused = false;
+                this.focused = (current_tab === "status");
                 this.running = false;
                 this.statusURL = "";
 
                 $scope.$on("tabChanged", function(event, args) {
                     if(args === "status") {
-                        console.log("status got focus");
                         ctrler.focused = true;
                     }
                     else {
-                        console.log("status lost focus");
                         ctrler.focused = false;
                     }
                 });

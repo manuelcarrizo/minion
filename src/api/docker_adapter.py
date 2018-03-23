@@ -47,16 +47,3 @@ def build(name, tag):
                 print(message)
     except Exception as e:
         print("error", e)
-
-def base_url(name, image, port):
-    container = get(name, image, False)
-    docker_port = "%d/%s" % (port.container, port.protocol)
-
-    try:
-        entry = container.attrs['NetworkSettings']['Ports'][docker_port][0]
-
-        ret = entry['HostIp'] + ":" + entry['HostPort']
-    except:
-        ret = None
-
-    return ret

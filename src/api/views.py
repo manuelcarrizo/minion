@@ -1,6 +1,8 @@
 import http
 import shutil
 
+from django.conf import settings
+
 from rest_framework import status as http_status
 from rest_framework import viewsets
 from rest_framework.decorators import detail_route
@@ -107,15 +109,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         return Response(git_adapter.tags(project.lower()))
 
-    def endpoint_url(self, name, image, port):
-        return docker_adapter.base_url(name, image, port)
-
     @detail_route(methods=['get'])
     def endpoint(self, request, pk=None):
         project = Project.objects.get(pk=pk)
 
-        port = project.ports.first()
-        return Response(self.endpoint_url(project.lower(), project.image, port))
+        port = project.ports.all()[:1].get()
+        return Response("%s:%d" % (settings.HOSTNAME, port.host))
     
     @detail_route(methods=['get'])
     def tags(self, request, pk=None):
