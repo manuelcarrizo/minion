@@ -13,6 +13,7 @@
         <link rel="stylesheet" href="static/css/minion.css">
 
         <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.7/angular.min.js"></script>
+        <script src="http://angular-ui.github.io/bootstrap/ui-bootstrap-tpls-2.5.0.js"></script>
         <script src="static/js/app.js"></script>
     </head>
 
@@ -26,27 +27,39 @@
 
             <div id="status" class="panel panel-default" ng-hide="!isActive('status')">
                 <div class="panel-body">
-                    <project-status ng-repeat="item in projects" item="item"></process-status>
+                    <project-status ng-repeat="item in projects" item="item"></project-status>
                 </div>
             </div>
 
             <div id="deploy" class="panel panel-default" ng-hide="!isActive('deploy')">
                 <div class="panel-body">
-                    <project-deploy ng-repeat="item in projects" item="item"></process-deploy>
+                    <project-deploy ng-repeat="item in projects" item="item"></project-deploy>
                 </div>
             </div>
 
             <div id="branches" class="panel panel-default" ng-hide="!isActive('branches')">
                 <div class="panel-body">
-                    <project-build ng-repeat="item in projects" item="item" type="branches" param="branch"></process-build>
+                    <project-build ng-repeat="item in projects" item="item" type="branches" param="branch"></project-build>
                 </div>
             </div>
 
             <div id="releases" class="panel panel-default" ng-hide="!isActive('releases')">
                 <div class="panel-body">
-                    <project-build ng-repeat="item in projects" item="item" type="releases" param="tag"></process-build>
+                    <project-build ng-repeat="item in projects" item="item" type="releases" param="tag"></project-build>
                 </div>
             </div>
+
+            <div id="settings" class="panel panel-default" ng-hide="!isActive('settings')">
+                    <div class="panel-body">
+                        <project-setting ng-repeat="item in projects" item="item"></project-setting>
+                    </div>
+                </div>
+
+            <!-- <div id="settings" class="panel panel-default" ng-hide="!isActive('settings')">
+                <div class="panel-body">
+                    <project-setting ng-repeat="item in projects" item="item"></project-setting>
+                </div>
+            </div> -->
         </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.3.1/ace.js" type="text/javascript" charset="utf-8"></script>

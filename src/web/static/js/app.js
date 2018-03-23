@@ -5,7 +5,7 @@
 
     app.controller("TabsController", ["$scope", "$location", function($scope, $location) {
         var tabs = this;
-        this.availableTabs = ["status", "deploy", "branches", "releases"];
+        this.availableTabs = ["status", "deploy", "branches", "releases", "settings"];
         this.activeTab = this.availableTabs[0];
 
         if(current_tab.length) {
@@ -24,17 +24,12 @@
         };
     }]);
 
-    app.service("projectsFactory", ["$http", "$q", function($http, $q) {
-        var deferred = $q.defer();
-
-        $http.get("api/projects").then(function(response) {
-            deferred.resolve(response.data);
-        },
-        function(response) {
-            deferred.reject(response);
-        });
-
-        return deferred.promise;
+    app.service("projectsService", ["$rootScope", "$http", function($rootScope, $http) {
+        this.get = function() {
+            $http.get("api/projects/").then(function(response) {
+                $rootScope.projects = response.data;
+            });
+        };
     }]);
 
     app.directive("projectStatus", function() {
@@ -104,6 +99,156 @@
         }
     });
 
+    app.directive("projectSetting", function() {
+        return {
+            restrict: "EA",
+            scope: {item: "<"},
+            templateUrl: "static/html/settings.html",
+            controllerAs: 'ctrler',
+            controller: function($scope, $http, projectsService) {
+                $scope.project = angular.copy($scope.item);
+
+                ctrler = this;
+                $scope.availableProtocols = ["tcp", "udp"];
+                this.new_port = {host: null, container: null, protocol: null};
+                this.new_path = "";
+
+                this.ports_to_delete = [];
+                this.ports_to_add = [];
+
+                this.volumes_to_delete = [];
+                this.volumes_to_add = [];
+
+                this.ports_modal = "ports-" + $scope.project.name;
+                this.volumes_modal = "volumes-" + $scope.project.name;
+
+                this.resetNewPort = function() {
+                    ctrler.new_port = {host: null, container: null, protocol: null};
+                }
+
+                this.resetScope = function() {
+                    this.ports_to_delete = [];
+                    this.ports_to_add = [];
+    
+                    this.volumes_to_delete = [];
+                    this.volumes_to_add = [];
+
+                    $scope.project = angular.copy($scope.item);
+                };
+                
+                this.openModal = function(name) {
+                    ctrler.resetScope();
+                    $('#' + name).modal({focus: true});
+                };
+
+                this.closeModal = function(name) {
+                    projectsService.get();
+                    $('#' + name).modal('hide')
+                };
+
+                this.validPort = function() {
+                    return ctrler.new_port.host > 0 && ctrler.new_port.container > 0 && ctrler.new_port.protocol;
+                };
+
+                this.addPort = function() {
+                    ctrler.ports_to_add.push(ctrler.new_port);
+                    ctrler.resetNewPort();
+                };
+
+                this.removePort = function(item) {
+                    if(item.project) {
+                        // this port exists on the DB, schedule to remove it
+                        var index = $scope.project.ports.indexOf(item);
+                        if (index > -1) {
+                            $scope.project.ports.splice(index, 1);
+                        }
+                        ctrler.ports_to_delete.push(item);
+                    }
+                    else {
+                        // this port was not saved
+                        var index = ctrler.ports_to_add.indexOf(item);
+                        if (index > -1) {
+                            ctrler.ports_to_add.splice(index, 1);
+                        }
+                    }
+                };
+
+                this.savePorts = function() {
+                    // first delete ports
+                    for(var i = 0; i < ctrler.ports_to_delete.length; i++) {
+                        p = ctrler.ports_to_delete[i];
+                        $http.delete("api/ports/" + p.host + "/").then(function(res) {
+                            console.log("Successfully removed", p.host);
+                        });
+                    }
+                    
+                    // then create new ones
+                    for(var i = 0; i < ctrler.ports_to_add.length; i++) {
+                        p = ctrler.ports_to_add[i];
+                        data = {
+                            project: $scope.project.id,
+                            host: p.host,
+                            container: p.container,
+                            protocol: p.protocol 
+                        }
+                        $http.post("api/ports/", data).then(function(res) {
+                            console.log("Successfully added", p.host)
+                        });
+                    }
+
+                    ctrler.closeModal(ctrler.ports_modal);
+                }
+
+                this.addVolume = function() {
+                    ctrler.volumes_to_add.push({path: ctrler.new_path});
+                    ctrler.new_path = "";
+                };
+
+                this.removeVolume = function(item) {
+                    if(item.project) {
+                        // this volume exists on the DB, schedule to remove it
+                        var index = $scope.project.volumes.indexOf(item);
+                        if (index > -1) {
+                            $scope.volumes.ports.splice(index, 1);
+                        }
+                        ctrler.volumes_to_delete.push(item);
+                    }
+                    else {
+                        // this volume was not saved
+                        var index = ctrler.volumes_to_add.indexOf(item);
+                        if (index > -1) {
+                            ctrler.volumes_to_add.splice(index, 1);
+                        }
+                    }
+                };
+
+                this.saveVolumes = function() {
+                    // first delete volumes
+                    for(var i = 0; i < ctrler.volumes_to_delete.length; i++) {
+                        v = ctrler.volumes_to_delete[i];
+                        $http.delete("api/volumes/" + v.id + "/").then(function(res) {
+                            console.log("Successfully removed", v.path);
+                        });
+                    }
+                    
+                    // then create new ones
+                    for(var i = 0; i < ctrler.volumes_to_add.length; i++) {
+                        v = ctrler.volumes_to_add[i];
+                        data = {
+                            project: $scope.project.id,
+                            path: v.path
+                        }
+                        $http.post("api/volumes/", data).then(function(res) {
+                            console.log("Successfully added", v.path)
+                        });
+                    }
+
+                    ctrler.closeModal(ctrler.volumes_modal);
+                }
+            } 
+        };
+    });
+
     app.directive("projectDeploy", function() {
         return {
             restrict: "EA",
@@ -149,7 +294,7 @@
                 $scope.availableRefs = [];
 
                 $scope.getRefs = function() {
-                    $http.get("api/projects/" + item_id + "/" + $scope.type).then(function(res) {
+                    $http.get("api/projects/" + item_id + "/" + $scope.type + "/").then(function(res) {
                         $scope.availableRefs = res.data;
                     });
                 };
@@ -167,9 +312,7 @@
         }
     });
 
-    app.run(function($rootScope, projectsFactory) {
-        projectsFactory.then(function(projects) {
-            $rootScope.projects = projects;
-        });
+    app.run(function($rootScope, projectsService) {
+        projectsService.get();
     });
 })();;
