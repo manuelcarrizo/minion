@@ -141,7 +141,7 @@
 
                 ctrler = this;
                 $scope.availableProtocols = ["tcp", "udp"];
-                this.new_port = {host: null, container: null, protocol: null};
+                $scope.new_port = {host: null, container: null, protocol: null};
                 this.new_path = "";
 
                 this.ports_to_delete = [];
@@ -155,7 +155,7 @@
                 this.confirm_modal = "confirm-" + $scope.project.name;
 
                 this.resetNewPort = function() {
-                    ctrler.new_port = {host: null, container: null, protocol: null};
+                    $scope.new_port = {host: null, container: null, protocol: null};
                 }
 
                 this.resetScope = function() {
@@ -171,10 +171,10 @@
                 this.deleteProject = function() {
                     $http.delete("api/projects/" + $scope.project.id + "/").then(function(res) {
                         console.log("Successfully deleted", $scope.project.name);
-                        ctrler.closeModal(ctrler.confirm_modal);
-                    }, function(err) {
-                        ctrler.closeModal(ctrler.confirm_modal);
+                        projectsService.get();
                     });
+
+                    ctrler.closeModal(ctrler.confirm_modal);
                 };
                 
                 this.openModal = function(name) {
@@ -183,16 +183,16 @@
                 };
 
                 this.closeModal = function(name) {
-                    projectsService.get();
-                    $('#' + name).modal('hide')
+                    $('#' + name).modal('hide');
+                    $('.modal-backdrop').remove();
                 };
 
                 this.validPort = function() {
-                    return ctrler.new_port && ctrler.new_port.host > 0 && ctrler.new_port.container > 0 && ctrler.new_port.protocol;
+                    return $scope.new_port.host > 0 && $scope.new_port.container > 0 && $scope.new_port.protocol;
                 };
 
                 this.addPort = function() {
-                    ctrler.ports_to_add.push(ctrler.new_port);
+                    ctrler.ports_to_add.push($scope.new_port);
                     ctrler.resetNewPort();
                 };
 
@@ -222,7 +222,7 @@
                             console.log("Successfully removed", p.host);
                         });
                     }
-                    
+
                     // then create new ones
                     for(var i = 0; i < ctrler.ports_to_add.length; i++) {
                         p = ctrler.ports_to_add[i];
@@ -233,7 +233,8 @@
                             protocol: p.protocol 
                         }
                         $http.post("api/ports/", data).then(function(res) {
-                            console.log("Successfully added", p.host)
+                            console.log("Successfully added", p.host);
+                            projectsService.get();
                         });
                     }
 
@@ -250,7 +251,7 @@
                         // this volume exists on the DB, schedule to remove it
                         var index = $scope.project.volumes.indexOf(item);
                         if (index > -1) {
-                            $scope.volumes.ports.splice(index, 1);
+                            $scope.project.volumes.splice(index, 1);
                         }
                         ctrler.volumes_to_delete.push(item);
                     }
@@ -281,6 +282,7 @@
                         }
                         $http.post("api/volumes/", data).then(function(res) {
                             console.log("Successfully added", v.path)
+                            projectsService.get();
                         });
                     }
 
