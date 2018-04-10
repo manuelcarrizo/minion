@@ -114,7 +114,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = Project.objects.get(pk=pk)
 
         port = project.ports.all()[:1].get()
-        return Response("%s:%d" % (settings.HOSTNAME, port.host))
+        return Response("%s:%d" % (settings.SERVER_NAME, port.host))
     
     @detail_route(methods=['get'])
     def tags(self, request, pk=None):
