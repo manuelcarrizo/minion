@@ -72,7 +72,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         branch = request.data.get('branch', None)
         tag = request.data.get('tag', None)
 
-        git_adapter.fetch(name)
+        git_adapter.pull(name)
 
         ref = branch or tag
         if ref:
