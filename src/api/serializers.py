@@ -17,7 +17,7 @@ class VolumeSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         # sanitize
-        validated_data['path'] = os.path.normpath("/" + validated_data['path']).replace("//", "/")
+        validated_data['path'] = os.path.normpath("/" + validated_data['path']).replace("//", "/").replace(" ", "_")
         volume = Volume.objects.create(**validated_data)
 
         volume_path = common.volumes_path(volume.project.lower()) + volume.path
@@ -30,6 +30,10 @@ class EnvVarSerializer(serializers.ModelSerializer):
         model = EnvVar
         fields = ('project', 'key', 'value')
 
+    def create(self, validated_data):
+        validated_data['key'] = validated_data['key'].replace(" ", "_")
+        return EnvVar.objects.create(**validated_data)
+
 class ProjectSerializer(serializers.ModelSerializer):
     ports = PortSerializer(many=True, required=False)
     volumes = VolumeSerializer(many=True, required=False)
@@ -39,6 +43,9 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'url', 'image', 'ports', 'volumes', 'envvars')
 
     def create(self, validated_data):
+        # sanitize name
+        validated_data['name'] = validated_data['name'].replace(" ", "_")
+
         ports_data = validated_data.pop('ports', [])
         volumes_data = validated_data.pop('volumes', [])
         envvars_data = validated_data.pop('envvars', [])
