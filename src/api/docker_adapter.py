@@ -15,11 +15,15 @@ def get(name, tag='latest', all=True):
 
 def start(project):
     image = "minion/%s:%s" % (project.lower(), project.image)
+    print("starting %s" % image)
     ports = { '%d/%s' % (p.container, p.protocol ): p.host for p in project.ports.all() }
     volumes = {'%s%s' % (volumes_path(project.lower()), v.path):
                     {'bind': v.path, 'mode': 'rw'} for v in project.volumes.all() }
+    envvars = { e.key: e.value for e in project.envvars.all() }
 
-    container = client.containers.run(image, detach=True, stdout=True, stderr=True, ports=ports, volumes=volumes)
+    container = client.containers.run(
+                    image, detach=True, stdout=True, stderr=True,
+                    ports=ports, volumes=volumes, environment=envvars)
     return container.id
 
 def stop(name, tag='latest'):

@@ -1,6 +1,6 @@
 import os
 from rest_framework import serializers
-from src.api.models import Project, Port, Volume
+from src.api.models import Project, Port, Volume, EnvVar
 
 from src.api import git_adapter
 from src.api import common
@@ -25,25 +25,34 @@ class VolumeSerializer(serializers.ModelSerializer):
 
         return volume
 
+class EnvVarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EnvVar
+        fields = ('project', 'key', 'value')
+
 class ProjectSerializer(serializers.ModelSerializer):
     ports = PortSerializer(many=True, required=False)
     volumes = VolumeSerializer(many=True, required=False)
     class Meta:
         model = Project
         depth = 1
-        fields = ('id', 'name', 'url', 'image', 'ports', 'volumes')
+        fields = ('id', 'name', 'url', 'image', 'ports', 'volumes', 'envvars')
 
     def create(self, validated_data):
         ports_data = validated_data.pop('ports', [])
         volumes_data = validated_data.pop('volumes', [])
+        envvars_data = validated_data.pop('envvars', [])
 
         project = Project.objects.create(**validated_data)
 
-        for port_data in ports_data:
-            Port.objects.create(project=project, **port_data)
+        for ports in ports_data:
+            Port.objects.create(project=project, **ports)
 
-        for volume_data in volumes_data:
-            Volume.objects.create(project=project, **volume_data)
+        for volumes in volumes_data:
+            Volume.objects.create(project=project, **volumes)
+        
+        for envvars in envvars_data:
+            EnvVar.objects.create(project=project, **envvars)
 
         common.background_task(git_adapter.clone, project.lower(), project.url)
 

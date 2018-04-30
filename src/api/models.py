@@ -35,3 +35,11 @@ class Volume(models.Model):
 
     def __str__(self):
         return self.path
+
+class EnvVar(models.Model):
+    project = models.ForeignKey(Project, related_name='envvars', on_delete=models.CASCADE)
+    key = models.CharField(max_length=255, blank=False)
+    value = models.CharField(max_length=255, blank=True)
+
+    def __str__(self):
+        return "%s=%s" % (self.key, self.value)

@@ -10,8 +10,8 @@ from rest_framework.response import Response
 
 from src.api import common
 
-from src.api.models import Project, Port, Volume
-from src.api.serializers import ProjectSerializer, PortSerializer, VolumeSerializer
+from src.api.models import Project, Port, Volume, EnvVar
+from src.api.serializers import ProjectSerializer, PortSerializer, VolumeSerializer, EnvVarSerializer
 
 import src.api.docker_adapter as docker_adapter
 import src.api.git_adapter as git_adapter
@@ -26,12 +26,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
-            shutil.rmtree(common.project_path(instance.lower()))
+            shutil.rmtree(common.project_path(instance.lower()), ignore_errors=True)
             self.perform_destroy(instance)
         except Exception as e:
-            pass
-        
-        return Response(status=http_status.HTTP_204_NO_CONTENT)
+            return Response(str(e), status=http_status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response(status=http_status.HTTP_200_OK)
 
     @detail_route(methods=["get", "post"])
     def status(self, request, pk=None):
@@ -113,8 +113,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def endpoint(self, request, pk=None):
         project = Project.objects.get(pk=pk)
 
-        port = project.ports.all()[:1].get()
-        return Response("%s:%d" % (settings.SERVER_NAME, port.host))
+        ports = project.ports.all()
+        if ports:
+            p = ports[:1].get()
+            return Response("%s:%d" % (settings.SERVER_NAME, p.host))
+        else:
+            return Response(status=http_status.HTTP_204_NO_CONTENT)
     
     @detail_route(methods=['get'])
     def tags(self, request, pk=None):
@@ -156,3 +160,9 @@ class VolumeViewSet(viewsets.ModelViewSet):
     queryset = Volume.objects.all()
     serializer_class = VolumeSerializer
 
+class EnvVarViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows envvars to be viewed or edited.
+    """
+    queryset = EnvVar.objects.all()
+    serializer_class = EnvVarSerializer
