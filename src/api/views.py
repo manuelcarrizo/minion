@@ -102,7 +102,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = Project.objects.get(pk=pk)
 
         name = project.lower()
-        git_adapter.pull(name)
+        git_adapter.fetch(name)
 
         return Response(git_adapter.branches(project.lower()))
 
@@ -111,7 +111,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = Project.objects.get(pk=pk)
 
         name = project.lower()
-        git_adapter.pull(name)
+        git_adapter.fetch(name)
 
         return Response(git_adapter.tags(project.lower()))
 
