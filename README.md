@@ -1,24 +1,8 @@
-### Status
-Here you can see all the services running, versions installed and start/stop/restart services.
-Information is obtained using Spring Boot `health` and `info` endpoints.
-![Status](images/status.png)
+Reimplementation of the old [Avenida Minion](old.md).
+The old codebase was too coupled to Avenida's needs so I rewrited it from scratch using Django, Django Rest Framework and Docker.
 
-### Releases
-Here you can see the `releases` versions on Sonatype Nexus per artifact and start a deploy.
-![Releases](images/releases.png)
+Minion aims to help you to set up development and testing environments running several microservices. It provides a control panel where you can see which services and versions and running. You can also build branches and tags on demand.
 
-### Snapshots
-Here you can see the `snapshots` versions on Sonatype Nexus per artifact and start a deploy.
-![Snapshots](images/snapshots.png)
+Given a git repository Minion will build Docker images using the Dockerfile in the root directory. You can configure the environment variables, ports and volumes that containers will use.
 
-### Build
-This tab lets you see all the branches on the projects and schedule a build on Jenkins, after the build is done the artifact is automatically deployed on this minion.
-![Build](images/build.png)
-
-### Properties
-Edit a configuration file per service, lets you create a copy of the current configuration and restore that copy later.
-![Properties](images/properties.png)
-
-### Log
-See the log files of each service, the user can activate autoreloading or reload manually.
-![Log](images/log.png)
+A live demo is available at http://minion.manuelcarrizo.com
