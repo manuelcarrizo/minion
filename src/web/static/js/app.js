@@ -137,10 +137,12 @@
             controller: function($scope, $http, projectsService) {
                 $scope.project = angular.copy($scope.item);
 
-                ctrler = this;
+                var ctrler = this;
                 $scope.availableProtocols = ["tcp", "udp"];
                 $scope.new_port = {host: null, container: null, protocol: null};
                 this.new_path = "";
+                $scope.env_key = "";
+                $scope.env_value = "";
 
                 this.ports_to_delete = [];
                 this.ports_to_add = [];
@@ -148,6 +150,10 @@
                 this.volumes_to_delete = [];
                 this.volumes_to_add = [];
 
+                this.envvars_to_delete = [];
+                this.envvars_to_add = [];
+
+                this.environment_modal = "environment-" + $scope.project.name;
                 this.ports_modal = "ports-" + $scope.project.name;
                 this.volumes_modal = "volumes-" + $scope.project.name;
                 this.confirm_modal = "confirm-" + $scope.project.name;
@@ -162,6 +168,9 @@
     
                     this.volumes_to_delete = [];
                     this.volumes_to_add = [];
+
+                    this.envvars_to_delete = [];
+                    this.envvars_to_add = [];
 
                     $scope.project = angular.copy($scope.item);
                 };
@@ -184,6 +193,57 @@
                     $('#' + name).modal('hide');
                     $('.modal-backdrop').remove();
                 };
+
+                this.addEnv = function() {
+                    ctrler.envvars_to_add.push({key: $scope.env_key, value: $scope.env_value});
+                    
+                    $scope.env_key = "";
+                    $scope.env_value = "";
+                };
+
+                this.removeEnv = function(item) {
+                    if(item.project) {
+                        // this env var exists on the DB, schedule to remove it
+                        var index = $scope.project.envvars.indexOf(item);
+                        if (index > -1) {
+                            $scope.project.envvars.splice(index, 1);
+                        }
+                        ctrler.envvars_to_delete.push(item);
+                    }
+                    else {
+                        // this env var was not saved
+                        var index = ctrler.envvars_to_add.indexOf(item);
+                        if (index > -1) {
+                            ctrler.envvars_to_add.splice(index, 1);
+                        }
+                    }
+                };
+
+                this.saveEnvironment = function() {
+                    // first delete env vars
+                    for(var i = 0; i < ctrler.envvars_to_delete.length; i++) {
+                        e = ctrler.envvars_to_delete[i];
+                        $http.delete("api/environment/" + e.id + "/").then(function(res) {
+                            console.log("Successfully removed", e.key);
+                        });
+                    }
+                    
+                    // then create new ones
+                    for(var i = 0; i < ctrler.envvars_to_add.length; i++) {
+                        e = ctrler.envvars_to_add[i];
+                        data = {
+                            project: $scope.project.id,
+                            key: e.key,
+                            value: e.value
+                        }
+                        $http.post("api/environment/", data).then(function(res) {
+                            console.log("Successfully added", e.key)
+                        });
+                    }
+                    projectsService.get();
+
+                    ctrler.closeModal(ctrler.environment_modal);
+                }
 
                 this.validPort = function() {
                     return $scope.new_port.host > 0 && $scope.new_port.container > 0 && $scope.new_port.protocol;

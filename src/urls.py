@@ -25,7 +25,7 @@ router = routers.DefaultRouter()
 router.register(r'projects', api.ProjectViewSet)
 router.register(r'ports', api.PortViewSet)
 router.register(r'volumes', api.VolumeViewSet)
-router.register(r'envvars', api.EnvVarViewSet)
+router.register(r'environment', api.EnvVarViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
