@@ -119,10 +119,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def endpoint(self, request, pk=None):
         project = Project.objects.get(pk=pk)
 
-        ports = project.ports.all()
-        if ports:
-            p = ports[:1].get()
-            return Response("%s:%d" % (settings.SERVER_NAME, p.host))
+        port = project.ports.first()
+        if port:
+            return Response("%s:%d" % (settings.SERVER_NAME, port.host))
         else:
             return Response(status=http_status.HTTP_204_NO_CONTENT)
 
