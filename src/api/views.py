@@ -101,11 +101,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def branches(self, request, pk=None):
         project = Project.objects.get(pk=pk)
 
+        name = project.lower()
+        git_adapter.pull(name)
+
         return Response(git_adapter.branches(project.lower()))
 
     @detail_route(methods=['get'])
     def releases(self, request, pk=None):
         project = Project.objects.get(pk=pk)
+
+        name = project.lower()
+        git_adapter.pull(name)
 
         return Response(git_adapter.tags(project.lower()))
 
@@ -119,7 +125,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return Response("%s:%d" % (settings.SERVER_NAME, p.host))
         else:
             return Response(status=http_status.HTTP_204_NO_CONTENT)
-    
+
     @detail_route(methods=['get'])
     def tags(self, request, pk=None):
         project = Project.objects.get(pk=pk)
@@ -136,7 +142,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if tag:
             print("deploying", name, 'from', project.image, 'to', tag)
             docker_adapter.stop(name, project.image)
-            
+
             project.image = tag
             project.save()
 
