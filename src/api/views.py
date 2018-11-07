@@ -72,11 +72,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
         branch = request.data.get('branch', None)
         tag = request.data.get('tag', None)
 
-        git_adapter.pull(name)
+        git_adapter.fetch(name)
 
         ref = branch or tag
         if ref:
             git_adapter.checkout(name, ref)
+
+            if branch:
+                git_adapter.pull(name)
         else:
             return Response('Unknown branch or tag', status=http_status.HTTP_400_BAD_REQUEST)
 
