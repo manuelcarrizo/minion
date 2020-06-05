@@ -2,7 +2,7 @@ astroid==1.6.2
 certifi==2018.1.18
 cffi==1.11.5
 chardet==3.0.4
-Django==2.0.1
+Django==2.2.13
 djangorestframework==3.7.7
 docker==3.1.0
 docker-pycreds==0.2.2
